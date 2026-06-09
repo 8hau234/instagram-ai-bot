@@ -27,7 +27,9 @@ const serviceAccountAuth = new JWT({
   ],
 });
 
-const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID, serviceAccountAuth);
+// Hardcoding the Spreadsheet ID directly to avoid Render missing variables
+const SPREADSHEET_ID = '1eKJopElxUmNIl7axIx8mgAhz9Jw51yupxooyvfw66Ug';
+const doc = new GoogleSpreadsheet(SPREADSHEET_ID, serviceAccountAuth);
 
 /**
  * Saves an order to the Google Sheet.
