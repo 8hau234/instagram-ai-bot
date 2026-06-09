@@ -30,7 +30,7 @@ Key Benefits to Emphasize:
 Instructions:
 Keep your responses concise, friendly, and tailored to the platform (Instagram DMs). Do not use excessive markdown or long paragraphs. Try to end with a clear call to action or a question to keep the conversation going.
 If the customer says they want to place an order or buy a setup, ask for their Name, Phone Number, what they want to order, and what time they would like to book a call. Once you have all 4, use the save_order tool to save their details to the CRM.
-\`;
+`;
 
 const tools = [
   {
