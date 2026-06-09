@@ -1,7 +1,7 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Groq = require("groq-sdk");
 
-// Initialize the Gemini API client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// Initialize the Groq API client
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Define the system instructions based on the provided persona
 const SYSTEM_INSTRUCTION = `
@@ -29,17 +29,20 @@ Keep your responses concise, friendly, and tailored to the platform (Instagram D
 
 async function generateAIResponse(userMessage) {
     try {
-        // Use gemini-1.5-flash as it is fast and supports system instructions
-        const model = genAI.getGenerativeModel({
-            model: "gemini-flash-latest",
-            systemInstruction: SYSTEM_INSTRUCTION
+        const chatCompletion = await groq.chat.completions.create({
+            messages: [
+                { role: "system", content: SYSTEM_INSTRUCTION },
+                { role: "user", content: userMessage }
+            ],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.7,
+            max_tokens: 1024,
         });
 
-        const result = await model.generateContent(userMessage);
-        const response = await result.response;
-        return response.text();
+        // Extract the generated text from Groq's response payload
+        return chatCompletion.choices[0]?.message?.content || "I apologize, but my AI system is currently undergoing a quick upgrade. Please try again in a moment.";
     } catch (error) {
-        console.error('Error generating AI response:', error);
+        console.error('Error generating AI response via Groq:', error);
         return "I apologize, but my AI system is currently undergoing a quick upgrade. Please try again in a moment, or let me know if you'd like to book a discovery call right away!";
     }
 }
