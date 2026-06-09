@@ -41,8 +41,11 @@ async function saveOrderToSheet(name, phone, orderDetails) {
         
         let sheet = doc.sheetsByIndex[0]; 
         
-        // If the sheet is completely empty, set header row
-        if (sheet.rowCount === 0 || !sheet.headerValues || sheet.headerValues.length === 0) {
+        try {
+            // Attempt to load existing headers
+            await sheet.loadHeaderRow();
+        } catch (err) {
+            // If it throws an error, the sheet is completely blank. Set the headers!
             await sheet.setHeaderRow(['Date', 'Name', 'Phone', 'Order Details', 'Status']);
         }
 
