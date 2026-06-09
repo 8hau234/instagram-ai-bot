@@ -11,11 +11,10 @@ if (fs.existsSync(credsPath)) {
     creds = require(credsPath);
 } else {
     creds = {
-        client_email: process.env.GOOGLE_CLIENT_EMAIL ? process.env.GOOGLE_CLIENT_EMAIL.trim() : null,
+        client_email: 'bot-sheets@insta-bot-498910.iam.gserviceaccount.com',
         // Replaces literal string \n with actual newlines when read from Render Env Vars
         private_key: process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.trim().replace(/\\n/g, '\n') : null
     };
-    if (!creds.client_email) console.error('CRITICAL: GOOGLE_CLIENT_EMAIL is empty or missing!');
     if (!creds.private_key) console.error('CRITICAL: GOOGLE_PRIVATE_KEY is empty or missing!');
 }
 
