@@ -33,8 +33,9 @@ const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID, serviceAccountAuth
  * @param {string} name - Customer Name
  * @param {string} phone - Customer Phone Number
  * @param {string} orderDetails - What they want to order
+ * @param {string} callTime - When they want to book a call
  */
-async function saveOrderToSheet(name, phone, orderDetails) {
+async function saveOrderToSheet(name, phone, orderDetails, callTime = 'Not specified') {
     try {
         await doc.loadInfo(); // loads document properties and worksheets
         console.log(`Connected to Sheet: ${doc.title}`);
@@ -46,7 +47,7 @@ async function saveOrderToSheet(name, phone, orderDetails) {
             await sheet.loadHeaderRow();
         } catch (err) {
             // If it throws an error, the sheet is completely blank. Set the headers!
-            await sheet.setHeaderRow(['Date', 'Name', 'Phone', 'Order Details', 'Status']);
+            await sheet.setHeaderRow(['Date', 'Name', 'Phone', 'Order Details', 'Call Time', 'Status']);
         }
 
         // Append the new order row
@@ -55,6 +56,7 @@ async function saveOrderToSheet(name, phone, orderDetails) {
             'Name': name,
             'Phone': phone,
             'Order Details': orderDetails,
+            'Call Time': callTime,
             'Status': 'New'
         });
 

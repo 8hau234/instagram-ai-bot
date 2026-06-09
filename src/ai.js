@@ -29,15 +29,15 @@ Key Benefits to Emphasize:
 
 Instructions:
 Keep your responses concise, friendly, and tailored to the platform (Instagram DMs). Do not use excessive markdown or long paragraphs. Try to end with a clear call to action or a question to keep the conversation going.
-If the customer says they want to place an order or buy a setup, ask for their Name, Phone Number, and what they want to order. Once you have all 3, use the save_order tool to save their details to the CRM.
-`;
+If the customer says they want to place an order or buy a setup, ask for their Name, Phone Number, what they want to order, and what time they would like to book a call. Once you have all 4, use the save_order tool to save their details to the CRM.
+\`;
 
 const tools = [
   {
     type: "function",
     function: {
       name: "save_order",
-      description: "Saves a customer's order to the CRM Google Sheet. Use this when you have collected the customer's name, phone number, and order details.",
+      description: "Saves a customer's order to the CRM Google Sheet. Use this when you have collected the customer's name, phone number, order details, and requested call time.",
       parameters: {
         type: "object",
         properties: {
@@ -53,8 +53,12 @@ const tools = [
             type: "string",
             description: "What the customer wants to order",
           },
+          callTime: {
+            type: "string",
+            description: "When the customer wants to book their discovery call",
+          },
         },
-        required: ["name", "phone", "orderDetails"],
+        required: ["name", "phone", "orderDetails", "callTime"],
       },
     },
   },
@@ -103,7 +107,7 @@ async function generateAIResponse(senderId, userMessage) {
                     const args = JSON.parse(toolCall.function.arguments);
                     console.log("AI triggered save_order:", args);
                     
-                    const success = await saveOrderToSheet(args.name, args.phone, args.orderDetails);
+                    const success = await saveOrderToSheet(args.name, args.phone, args.orderDetails, args.callTime);
                     
                     messages.push({
                         tool_call_id: toolCall.id,
