@@ -1,0 +1,68 @@
+const { GoogleSpreadsheet } = require('google-spreadsheet');
+const { JWT } = require('google-auth-library');
+const fs = require('fs');
+const path = require('path');
+
+let creds;
+const credsPath = path.join(__dirname, '../google-credentials.json');
+
+// Support both local JSON file and Render Environment Variables
+if (fs.existsSync(credsPath)) {
+    creds = require(credsPath);
+} else {
+    creds = {
+        client_email: process.env.GOOGLE_CLIENT_EMAIL,
+        // Replaces literal string \n with actual newlines when read from Render Env Vars
+        private_key: process.env.GOOGLE_PRIVATE_KEY ? process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n') : null
+    };
+}
+
+// Initialize auth
+const serviceAccountAuth = new JWT({
+  email: creds.client_email,
+  key: creds.private_key,
+  scopes: [
+    'https://www.googleapis.com/auth/spreadsheets',
+  ],
+});
+
+const doc = new GoogleSpreadsheet(process.env.SPREADSHEET_ID, serviceAccountAuth);
+
+/**
+ * Saves an order to the Google Sheet.
+ * @param {string} name - Customer Name
+ * @param {string} phone - Customer Phone Number
+ * @param {string} orderDetails - What they want to order
+ */
+async function saveOrderToSheet(name, phone, orderDetails) {
+    try {
+        await doc.loadInfo(); // loads document properties and worksheets
+        console.log(`Connected to Sheet: ${doc.title}`);
+        
+        let sheet = doc.sheetsByIndex[0]; 
+        
+        // If the sheet is completely empty, set header row
+        if (sheet.rowCount === 0 || !sheet.headerValues || sheet.headerValues.length === 0) {
+            await sheet.setHeaderRow(['Date', 'Name', 'Phone', 'Order Details', 'Status']);
+        }
+
+        // Append the new order row
+        const newRow = await sheet.addRow({
+            'Date': new Date().toLocaleString(),
+            'Name': name,
+            'Phone': phone,
+            'Order Details': orderDetails,
+            'Status': 'New'
+        });
+
+        console.log('Successfully saved new order row to Google Sheets!');
+        return true;
+    } catch (error) {
+        console.error('Failed to save to Google Sheets:', error);
+        return false;
+    }
+}
+
+module.exports = {
+    saveOrderToSheet
+};
