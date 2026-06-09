@@ -56,8 +56,8 @@ app.post('/webhook', async (req, res) => {
                         const messageText = webhookEvent.message.text;
                         console.log(`Received DM from ${senderId}: ${messageText}`);
                         
-                        // Generate intelligent response using Gemini
-                        const aiResponse = await generateAIResponse(messageText);
+                        // Generate intelligent response using Groq
+                        const aiResponse = await generateAIResponse(senderId, messageText);
                         
                         // Send the AI's response back to the user
                         await sendDM(senderId, aiResponse);

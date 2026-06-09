@@ -4,6 +4,9 @@ const { saveOrderToSheet } = require("./sheets");
 // Initialize the Groq API client
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+// In-memory store for conversation history (Maps senderId -> Array of messages)
+const memoryDb = new Map();
+
 // Define the system instructions based on the provided persona
 const SYSTEM_INSTRUCTION = `
 Business Overview:
@@ -57,14 +60,27 @@ const tools = [
   },
 ];
 
-// In a real production environment, you would store conversation history in a database.
-// For this simple demo, we will pass the system instruction and the current user message.
-// The AI will still act accurately, but won't have deep multi-turn memory without a DB.
-async function generateAIResponse(userMessage) {
+async function generateAIResponse(senderId, userMessage) {
     try {
+        // Retrieve past messages for this user, or start a new array
+        if (!memoryDb.has(senderId)) {
+            memoryDb.set(senderId, []);
+        }
+        
+        let userHistory = memoryDb.get(senderId);
+        
+        // Add the new user message to history
+        userHistory.push({ role: "user", content: userMessage });
+
+        // Keep only the last 10 messages to prevent token overflow
+        if (userHistory.length > 10) {
+            userHistory = userHistory.slice(userHistory.length - 10);
+        }
+
+        // Build the full prompt array
         const messages = [
             { role: "system", content: SYSTEM_INSTRUCTION },
-            { role: "user", content: userMessage }
+            ...userHistory
         ];
 
         let chatCompletion = await groq.chat.completions.create({
@@ -93,7 +109,7 @@ async function generateAIResponse(userMessage) {
                         tool_call_id: toolCall.id,
                         role: "tool",
                         name: "save_order",
-                        content: success ? "Order saved successfully!" : "Failed to save order.",
+                        content: success ? "Order saved successfully! Tell the customer their order is confirmed." : "Failed to save order to the database. Tell the user there was a glitch and you couldn't process the order.",
                     });
                 }
             }
@@ -106,10 +122,22 @@ async function generateAIResponse(userMessage) {
                 max_tokens: 1024,
             });
             
-            return chatCompletion.choices[0]?.message?.content || "Your order has been recorded!";
+            const finalReply = chatCompletion.choices[0]?.message?.content || "Your order has been recorded!";
+            
+            // Save bot's reply to memory
+            userHistory.push({ role: "assistant", content: finalReply });
+            memoryDb.set(senderId, userHistory);
+            
+            return finalReply;
         }
 
-        return responseMessage?.content || "I apologize, but my AI system is currently undergoing a quick upgrade. Please try again in a moment.";
+        const standardReply = responseMessage?.content || "I apologize, but my AI system is currently undergoing a quick upgrade. Please try again in a moment.";
+        
+        // Save bot's reply to memory
+        userHistory.push({ role: "assistant", content: standardReply });
+        memoryDb.set(senderId, userHistory);
+        
+        return standardReply;
     } catch (error) {
         console.error('Error generating AI response via Groq:', error);
         return "I apologize, but my AI system is currently undergoing a quick upgrade. Please try again in a moment, or let me know if you'd like to book a discovery call right away!";
